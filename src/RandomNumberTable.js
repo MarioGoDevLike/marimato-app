@@ -10,7 +10,8 @@ class NumberTable extends React.Component {
       pcTotalValue: 0,
       isPlayerTurn: true, // Add isPlayerTurn state,
       selectedColumn:null,
-      hoveredRow:null
+      hoveredRow:null,
+      selectedRow:null,
     };
   }
 
@@ -35,11 +36,33 @@ class NumberTable extends React.Component {
     if (!this.state.isPlayerTurn) {
       return; // Ignore clicks during PC's turn
     }
-  
+    const {selectedRow} = this.state;
     const clickedNumber = this.state.numbers[rowIndex][colIndex];
-    
-    if (clickedNumber !== null) {
+    if(selectedRow){
+    if (clickedNumber !== null && rowIndex === this.state.selectedRow) {
       const updatedNumbers = [...this.state.numbers];
+      updatedNumbers[rowIndex] = updatedNumbers[rowIndex].map((number, index) =>
+        index === colIndex ? null : number
+      );
+      
+      this.setState(
+        (prevState) => ({
+          numbers: updatedNumbers,
+          playerTotalValue: prevState.playerTotalValue + clickedNumber,
+          isPlayerTurn: false, // Switch to PC's turn
+        }),
+        () => {
+          setTimeout(() => {
+            this.handlePCTurn();
+          }, 1000); // Delay PC's turn for 1 second
+        }
+      );
+    this.setState({selectedColumn:colIndex})
+    }
+ 
+  }
+  else{
+    const updatedNumbers = [...this.state.numbers];
       updatedNumbers[rowIndex] = updatedNumbers[rowIndex].map((number, index) =>
         index === colIndex ? null : number
       );
@@ -95,6 +118,7 @@ class NumberTable extends React.Component {
           }
         );
       }
+      this.setState({selectedRow:rowIndex})
     } else {
       let highestNumber = {number:this.state.numbers[0][0],rowIndex:0,colIndex:0}
       this.state.numbers.map((row,rowIndex)=>{
@@ -125,7 +149,7 @@ class NumberTable extends React.Component {
   };
 
   render() {
-    const {selectedColumn,hoveredRow,isPlayerTurn} = this.state
+    const {selectedColumn,hoveredRow,isPlayerTurn,selectedRow} = this.state
 
     return (
       <div className='all-container'>
@@ -137,7 +161,7 @@ class NumberTable extends React.Component {
           <tbody className='table-all'>
             {this.state.numbers.map((rowNumbers, rowIndex) => (
               <tr onMouseOver={()=>{
-                if(hoveredRow !== rowIndex){
+                if(hoveredRow !== rowIndex && !selectedRow){
                   this.setState({hoveredRow:rowIndex})
                 }
               }} className='table-row' key={rowIndex}>
@@ -145,7 +169,7 @@ class NumberTable extends React.Component {
                   <td
                     className='table-number'
                     key={colIndex}
-                    style={(colIndex === selectedColumn && !isPlayerTurn) ? {backgroundColor:'grey'} :( rowIndex === hoveredRow && isPlayerTurn) ? {backgroundColor:'grey'} : {}}
+                    style={(colIndex === selectedColumn && !isPlayerTurn) ? {backgroundColor:'grey'} :( rowIndex === (selectedRow || hoveredRow) && isPlayerTurn) ? {backgroundColor:'grey'} : {}}
                     onClick={() => this.handleCellClick(rowIndex, colIndex)}
                   >
                     {number !== null ? number : ''}
